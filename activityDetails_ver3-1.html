@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三德子球会™ 活动明细</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, "XinGothic W4 GBJ Light", BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+      font-weight: regular;
+      line-height: 200%;
+      margin-left: 30px;
+    }
+
+    table th,
+    table td {
+      text-align: left;
+      font-weight: regular;
+      line-height: 200%;
+    }
+
+    table {
+      border-collapse: collapse;
+    }
+
+    table tr:not(:last-child) {
+      border-bottom: 1px solid #ddd;
+    }
+
+    /* 添加表头底部粗横线样式 */
+    #projectTable thead tr,
+    #sumTable thead tr {
+      border-bottom: 2px solid black;
+    }
+
+    /* 为表格最后一行底部添加粗横线 */
+    #projectTable tbody tr:last-child,
+    #sumTable tbody tr:last-child {
+      border-bottom: 2px solid black;
+    }
+
+ h3 {
+       margin-top: 50px; /* 增加标题之间的底部间距 */
+   }
+
+    /* 按钮样式 */
+  .add-button {
+      font-size: inherit;
+      line-height: inherit;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: gray;
+    }
+  </style>
+</head>
+
+<body>
+  <h3 style="margin-bottom: 0;">三德子球会™ 活动明细</h3>
+  <input type="text" placeholder="输入日期或空格" style="text-size-adjust: inherit; color: gray; border: 0; border-bottom: 0px solid black;">
+
+  <!-- 项目费用表格 -->
+  <h3>项目一览</h3>
+  <table id="projectTable">
+    <thead>
+      <tr>
+        <th style="width: 160px;">项目</th>
+        <th style="width: 80px;">金额</th>
+        <th style="width: 80px;">人数</th>
+        <th style="width: 80px;">人均</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+  <!-- 修改后的添加项目按钮 -->
+  <span class="add-button" onclick="addProject()">添加</span>
+
+  <br style="line-height: 150%;">
+
+  <!-- 费用求和表格 -->
+  <h3>嘉宾费用</h3>
+  <table id="sumTable">
+    <thead>
+      <tr>
+        <th style="width: 160px;">嘉宾</th>
+        <th style="width: 160px;">参与</th>
+        <th style="width: 80px;">每人</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+  <!-- 修改后的添加嘉宾按钮 -->
+  <span class="add-button" onclick="addParticipant()">添加</span>
+
+  <br style="line-height: 150%;">
+
+  <!-- 费用核算器部分 -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 60px;">
+    <div>
+      <p style="line-height: 1;">项目金额求和：<span id="projectSumResult">0</span></p>
+      <p style="line-height: 1;">嘉宾费用求和：<span id="participantSumResult">0</span></p>
+    </div>
+  </div>
+  <input type="text" placeholder="输入公式自动计算嘉宾费用" id="formulaInput" style="width: 400px; border: 0; border-bottom: 2px solid black;">
+
+  <script>
+    // 存储项目信息
+    let projectList = [];
+    // 存储嘉宾信息
+    let participantList = [];
+
+    function addProject() {
+      // 添加注释说明函数作用
+      // 用于添加新的项目信息
+      let projectName = prompt("请输入项目名称：");
+      let projectAmount = prompt("请输入项目金额：");
+      let projectPeopleCount = prompt("请输入项目人数：");
+      if (projectName && projectAmount && projectPeopleCount &&!isNaN(parseFloat(projectAmount)) && parseInt(projectPeopleCount) > 0) {
+        projectList.push({
+          name: projectName,
+          amount: parseFloat(projectAmount),
+          peopleCount: parseInt(projectPeopleCount),
+          average: parseFloat(projectAmount) / parseInt(projectPeopleCount)
+        });
+        updateProjectTable();
+        updateProjectSum();
+      } else {
+        alert("输入的数据无效，请重新输入。");
+      }
+    }
+
+    function updateProjectTable() {
+      let tableBody = document.getElementById('projectTable').getElementsByTagName('tbody')[0];
+      tableBody.innerHTML = '';
+      projectList.forEach(project => {
+        let row = tableBody.insertRow();
+        let nameCell = row.insertCell(0);
+        let amountCell = row.insertCell(1);
+        let peopleCountCell = row.insertCell(2);
+        let averageCell = row.insertCell(3);
+        nameCell.textContent = project.name;
+        amountCell.textContent = project.amount.toFixed(2);
+        peopleCountCell.textContent = project.peopleCount;
+        averageCell.textContent = project.average.toFixed(2);
+
+        // 为项目名称单元格添加可编辑功能
+        nameCell.addEventListener('click', function () {
+          let newName = prompt("请输入新的项目名称：", project.name);
+          if (newName) {
+            project.name = newName;
+            updateProjectTable();
+            updateSumTable();
+            // 当项目名称修改后，取消所有嘉宾对该项目的勾选并更新总平均金额
+            participantList.forEach(participant => {
+              let checkbox = document.getElementById(`projectCheckbox${participantList.indexOf(participant)}${projectList.indexOf(project)}`);
+              if (checkbox) {
+                checkbox.checked = false;
+                participant.projects = participant.projects.filter(p => p!== project);
+                participant.totalAverage = participant.projects.reduce((total, p) => total + p.average, 0);
+              }
+            });
+            updateSumTable();
+          }
+        });
+
+        // 为金额单元格添加可编辑功能（需手动更新人数和人均）
+        amountCell.addEventListener('click', function () {
+          let newAmount = prompt("请输入新的项目金额：", project.amount);
+          if (newAmount &&!isNaN(parseFloat(newAmount))) {
+            project.amount = parseFloat(newAmount);
+            project.average = project.amount / project.peopleCount;
+            updateProjectTable();
+            updateSumTable();
+            updateProjectSum();
+          } else {
+            alert("输入的金额无效，请重新输入。");
+          }
+        });
+
+        // 为人数单元格添加可编辑功能（需手动更新人均）
+        peopleCountCell.addEventListener('click', function () {
+          let newPeopleCount = prompt("请输入新的项目人数：", project.peopleCount);
+          if (newPeopleCount && parseInt(newPeopleCount) > 0) {
+            project.peopleCount = parseInt(newPeopleCount);
+            project.average = project.amount / project.peopleCount;
+            updateProjectTable();
+            updateSumTable();
+            updateProjectSum();
+          } else {
+            alert("输入的人数无效，请重新输入。");
+          }
+        });
+
+        // 为项目名称单元格添加 shift+单击删除功能
+        nameCell.addEventListener('click', function (event) {
+          if (event.shiftKey) {
+            projectList = projectList.filter(p => p!== project);
+            updateProjectTable();
+            updateSumTable();
+            updateProjectSum();
+          }
+        });
+      });
+    }
+
+    function addParticipant() {
+      let participantName = prompt("请输入嘉宾名称：");
+      if (participantName) {
+        participantList.push({
+          name: participantName,
+          projects: [],
+          totalAverage: 0
+        });
+        updateSumTable();
+      }
+    }
+
+    function updateSumTable() {
+      let tableBody = document.getElementById('sumTable').getElementsByTagName('tbody')[0];
+      tableBody.innerHTML = '';
+      participantList.forEach((participant, participantIndex) => {
+        let row = tableBody.insertRow();
+        let nameCell = row.insertCell(0);
+        let projectsCell = row.insertCell(1);
+        let averageSumCell = row.insertCell(2);
+        nameCell.textContent = participant.name;
+        projectsCell.innerHTML = projectList.map((project, projectIndex) => `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})"> ${project.name}<br>`).join('');
+        averageSumCell.textContent = participant.totalAverage.toFixed(2);
+
+        // 为嘉宾名称单元格添加可编辑功能
+        nameCell.addEventListener('click', function () {
+          let newName = prompt("请输入新的嘉宾名称：", participant.name);
+          if (newName) {
+            participant.name = newName;
+            updateSumTable();
+          }
+        });
+
+        // 为嘉宾名称单元格添加 shift+单击删除功能
+        nameCell.addEventListener('click', function (event) {
+          if (event.shiftKey) {
+            participantList = participantList.filter(p => p!== participant);
+            updateSumTable();
+          }
+        });
+      });
+    }
+
+    function updateParticipantAverage(participantIndex, projectIndex) {
+      let participant = participantList[participantIndex];
+      let checkbox = document.getElementById(`projectCheckbox${participantIndex}${projectIndex}`);
+      if (checkbox.checked) {
+        participant.projects.push(projectList[projectIndex]);
+        // 更新总平均金额
+        participant.totalAverage = participant.projects.reduce((total, project) => total + project.average, 0);
+      } else {
+        participant.projects = participant.projects.filter(p => p!== projectList[projectIndex]);
+        // 更新总平均金额
+        participant.totalAverage = participant.projects.reduce((total, project) => total + project.average, 0);
+      }
+      let averageSumCell = document.getElementById('sumTable').getElementsByTagName('tbody')[0].rows[participantIndex].cells[2];
+      averageSumCell.textContent = participant.totalAverage.toFixed(2);
+      updateParticipantSum();
+    }
+
+    function updateProjectSum() {
+      let total = 0;
+      projectList.forEach(project => {
+        total += project.amount;
+      });
+      document.getElementById('projectSumResult').textContent = total.toFixed(2);
+    }
+
+    function updateParticipantSum() {
+      let formulaInputValue = document.getElementById('formulaInput').value;
+      let total = 0;
+      participantList.forEach(participant => {
+        total += participant.totalAverage;
+      });
+      try {
+        let result = eval(formulaInputValue);
+        document.getElementById('participantSumResult').textContent = result.toFixed(2);
+      } catch (error) {
+        document.getElementById('participantSumResult').textContent = '错误的公式';
+      }
+    }
+
+    document.getElementById('formulaInput').addEventListener('input', function () {
+      updateParticipantSum();
+    });
+  </script>
+
+</body>
+
+</html>
