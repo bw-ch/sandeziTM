@@ -333,7 +333,7 @@
             let newDateMMDD = prompt("请输入日期（MMDD）：");
             if (newDateMMDD && /^\d{4}$/.test(newDateMMDD)) {
                 let year = new Date().getFullYear();
-                let newDate = year + '-' + newDateMMDD.slice(0, 2) + '-' + newDateMMDD.slice(2);
+                let newDate = year + '/' + newDateMMDD.slice(0, 2) + '/' + newDateMMDD.slice(2);
                 let dateObj = new Date(newDate);
                 let dayOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][dateObj.getDay()];
                 document.getElementById('currentDate').textContent = newDate + ' ' + dayOfWeek;
