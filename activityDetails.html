@@ -272,8 +272,8 @@
                 // 构建参与列内容，先添加系数
                 let projectsContent = '';
                 if (participant.coefficient!== 1) {
-                    projectsContent += `${participant.coefficient * 100}% of<br>`;
-                }
+    projectsContent += `<span style="color: gray;">${participant.coefficient * 100}% of</span><br>`;
+}
                 projectsContent += projectList.map((project, projectIndex) => {
                     const isChecked = participant.projects.includes(project);
                     return `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})" ${isChecked? 'checked' : ''}> ${project.name}<br>`;
@@ -330,8 +330,8 @@
             let projectsCell = document.getElementById('sumTable').getElementsByTagName('tbody')[0].rows[participantIndex].cells[1];
             let projectsContent = '';
             if (participant.coefficient!== 1) {
-                projectsContent += `${participant.coefficient * 100}% of<br>`;
-            }
+    projectsContent += `<span style="color: gray;">${participant.coefficient * 100}% of</span><br>`;
+}
             projectsContent += projectList.map((project, projectIndex) => {
                 const isChecked = participant.projects.includes(project);
                 return `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})" ${isChecked? 'checked' : ''}> ${project.name}<br>`;
