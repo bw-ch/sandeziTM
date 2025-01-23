@@ -46,7 +46,7 @@
         }
 
         /* 按钮样式 */
-     .add-button {
+       .add-button {
             font-size: inherit;
             line-height: inherit;
             border: none;
@@ -95,7 +95,7 @@
     </table>
     <!-- 修改后的添加嘉宾按钮 -->
     <span class="add-button" onclick="addParticipant()">添加</span>
-    <span class="add-button" onclick="resetGuests()">复位</span>
+    <span class="add-button" onclick="resetGuests()">更新</span>
 
     <br style="line-height: 150%;">
 
@@ -127,7 +127,7 @@
             let projectName = prompt("请输入项目名称：");
             let projectAmountInput = prompt("请输入项目金额（可输入公式，需以'='开头）：");
             let projectPeopleCount = prompt("请输入项目人数：");
-            if (projectName && projectPeopleCount && parseInt(projectPeopleCount) > 0) {
+            if (projectName && projectPeopleCount && parseFloat(projectPeopleCount) > 0) {
                 let projectAmount;
                 if (projectAmountInput.startsWith("=")) {
                     try {
@@ -146,8 +146,8 @@
                 projectList.push({
                     name: projectName,
                     amount: projectAmount,
-                    peopleCount: parseInt(projectPeopleCount),
-                    average: projectAmount / parseInt(projectPeopleCount)
+                    peopleCount: parseFloat(projectPeopleCount),
+                    average: projectAmount / parseFloat(projectPeopleCount)
                 });
                 updateProjectTable();
                 updateProjectSum();
@@ -218,8 +218,8 @@
                 // 为人数单元格添加可编辑功能（需手动更新人均）
                 peopleCountCell.addEventListener('click', function () {
                     let newPeopleCount = prompt("请输入新的项目人数：", project.peopleCount);
-                    if (newPeopleCount && parseInt(newPeopleCount) > 0) {
-                        project.peopleCount = parseInt(newPeopleCount);
+                    if (newPeopleCount && parseFloat(newPeopleCount) > 0) {
+                        project.peopleCount = parseFloat(newPeopleCount);
                         project.average = project.amount / project.peopleCount;
                         updateProjectTable();
                         updateSumTable();
@@ -243,11 +243,17 @@
 
         function addParticipant() {
             let participantName = prompt("请输入嘉宾名称：");
+            let coefficient = prompt("请输入参与度系数（若全程参与填 1，参与一半填 0.5）：");
+            coefficient = parseFloat(coefficient);
+            if (isNaN(coefficient)) {
+                coefficient = 1;
+            }
             if (participantName) {
                 participantList.push({
                     name: participantName,
                     projects: [],
-                    totalAverage: 0
+                    totalAverage: 0,
+                    coefficient: coefficient
                 });
                 updateSumTable();
             }
@@ -262,16 +268,35 @@
                 let projectsCell = row.insertCell(1);
                 let averageSumCell = row.insertCell(2);
                 nameCell.textContent = participant.name;
-                projectsCell.innerHTML = projectList.map((project, projectIndex) => `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})"> ${project.name}<br>`).join('');
-                averageSumCell.textContent = participant.totalAverage.toFixed(2);
+
+                // 构建参与列内容，先添加系数
+                let projectsContent = '';
+                if (participant.coefficient!== 1) {
+                    projectsContent += `${participant.coefficient * 100}% of<br>`;
+                }
+                projectsContent += projectList.map((project, projectIndex) => {
+                    const isChecked = participant.projects.includes(project);
+                    return `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})" ${isChecked? 'checked' : ''}> ${project.name}<br>`;
+                }).join('');
+                projectsCell.innerHTML = projectsContent;
+
+                let result = (participant.totalAverage * participant.coefficient).toFixed(2);
+                averageSumCell.textContent = result;
                 averageSumCell.style.textAlign = 'right';
 
                 // 为嘉宾名称单元格添加可编辑功能
                 nameCell.addEventListener('click', function () {
                     let newName = prompt("请输入新的嘉宾名称：", participant.name);
+                    let newCoefficient = prompt("请输入新的参与度系数（若全程参与填 1，参与一半填 0.5）：", participant.coefficient);
+                    newCoefficient = parseFloat(newCoefficient);
+                    if (isNaN(newCoefficient)) {
+                        newCoefficient = participant.coefficient;
+                    }
                     if (newName) {
                         participant.name = newName;
+                        participant.coefficient = newCoefficient;
                         updateSumTable();
+                        updateParticipantSum();
                     }
                 });
 
@@ -290,16 +315,28 @@
             let checkbox = document.getElementById(`projectCheckbox${participantIndex}${projectIndex}`);
             if (checkbox.checked) {
                 participant.projects.push(projectList[projectIndex]);
-                // 更新总平均金额
-                participant.totalAverage = participant.projects.reduce((total, project) => total + project.average, 0);
             } else {
                 participant.projects = participant.projects.filter(p => p!== projectList[projectIndex]);
-                // 更新总平均金额
-                participant.totalAverage = participant.projects.reduce((total, project) => total + project.average, 0);
             }
+            // 更新总平均金额
+            participant.totalAverage = participant.projects.reduce((total, project) => total + project.average, 0);
+
             let averageSumCell = document.getElementById('sumTable').getElementsByTagName('tbody')[0].rows[participantIndex].cells[2];
-            averageSumCell.textContent = participant.totalAverage.toFixed(2);
+            let result = (participant.totalAverage * participant.coefficient).toFixed(2);
+            averageSumCell.textContent = result;
             updateParticipantSum();
+
+            // 更新参与列的系数显示
+            let projectsCell = document.getElementById('sumTable').getElementsByTagName('tbody')[0].rows[participantIndex].cells[1];
+            let projectsContent = '';
+            if (participant.coefficient!== 1) {
+                projectsContent += `${participant.coefficient * 100}% of<br>`;
+            }
+            projectsContent += projectList.map((project, projectIndex) => {
+                const isChecked = participant.projects.includes(project);
+                return `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})" ${isChecked? 'checked' : ''}> ${project.name}<br>`;
+            }).join('');
+            projectsCell.innerHTML = projectsContent;
         }
 
         function updateProjectSum() {
@@ -314,7 +351,7 @@
             let formulaInputValue = document.getElementById('formulaInput').value;
             let total = 0;
             participantList.forEach(participant => {
-                total += participant.totalAverage;
+                total += participant.totalAverage * participant.coefficient;
             });
             try {
                 let result = eval(formulaInputValue);
@@ -333,7 +370,7 @@
             let newDateMMDD = prompt("请输入日期（MMDD）：");
             if (newDateMMDD && /^\d{4}$/.test(newDateMMDD)) {
                 let year = new Date().getFullYear();
-                let newDate = year + '/' + newDateMMDD.slice(0, 2) + '/' + newDateMMDD.slice(2);
+                let newDate = year + '-' + newDateMMDD.slice(0, 2) + '-' + newDateMMDD.slice(2);
                 let dateObj = new Date(newDate);
                 let dayOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][dateObj.getDay()];
                 document.getElementById('currentDate').textContent = newDate + ' ' + dayOfWeek;
