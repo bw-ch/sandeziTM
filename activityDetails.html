@@ -95,12 +95,11 @@
     </table>
     <!-- 修改后的添加嘉宾按钮 -->
     <span class="add-button" onclick="addParticipant()">添加</span>
-    <span class="add-button" onclick="resetGuests()">更新</span>
 
     <br style="line-height: 150%;">
 
     <!-- 调整截图按钮位置 -->
-    <button id="screenshotButton" style="margin-top: 90px;">生成截图</button>
+    <button id="screenshotButton" style="margin-top: 90px;">保存截图</button>
 
     <!-- 费用核算器部分 -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 60px;">
@@ -126,7 +125,7 @@
             // 用于添加新的项目信息
             let projectName = prompt("请输入项目名称：");
             let projectAmountInput = prompt("请输入项目金额（可输入公式，需以'='开头）：");
-            let projectPeopleCount = prompt("请输入项目人数：");
+            let projectPeopleCount = prompt("请输入项目人数（支持小数，适用于部分参与的嘉宾）：");
             if (projectName && projectPeopleCount && parseFloat(projectPeopleCount) > 0) {
                 let projectAmount;
                 if (projectAmountInput.startsWith("=")) {
@@ -217,7 +216,7 @@
 
                 // 为人数单元格添加可编辑功能（需手动更新人均）
                 peopleCountCell.addEventListener('click', function () {
-                    let newPeopleCount = prompt("请输入新的项目人数：", project.peopleCount);
+                    let newPeopleCount = prompt("请输入新的项目人数（支持小数，适用于部分参与的嘉宾）：", project.peopleCount);
                     if (newPeopleCount && parseFloat(newPeopleCount) > 0) {
                         project.peopleCount = parseFloat(newPeopleCount);
                         project.average = project.amount / project.peopleCount;
@@ -239,6 +238,12 @@
                     }
                 });
             });
+
+            // 在更新项目表后，同步更新嘉宾的费用计算
+            participantList.forEach(participant => {
+                participant.totalAverage = participant.projects.reduce((total, p) => total + p.average, 0);
+            });
+            updateSumTable();
         }
 
         function addParticipant() {
@@ -272,8 +277,8 @@
                 // 构建参与列内容，先添加系数
                 let projectsContent = '';
                 if (participant.coefficient!== 1) {
-    projectsContent += `<span style="color: gray;">${participant.coefficient * 100}% of</span><br>`;
-}
+                    projectsContent += `<span style="color: gray;">${participant.coefficient * 100}% of</span><br>`;
+                }
                 projectsContent += projectList.map((project, projectIndex) => {
                     const isChecked = participant.projects.includes(project);
                     return `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})" ${isChecked? 'checked' : ''}> ${project.name}<br>`;
@@ -330,8 +335,8 @@
             let projectsCell = document.getElementById('sumTable').getElementsByTagName('tbody')[0].rows[participantIndex].cells[1];
             let projectsContent = '';
             if (participant.coefficient!== 1) {
-    projectsContent += `<span style="color: gray;">${participant.coefficient * 100}% of</span><br>`;
-}
+                projectsContent += `<span style="color: gray;">${participant.coefficient * 100}% of</span><br>`;
+            }
             projectsContent += projectList.map((project, projectIndex) => {
                 const isChecked = participant.projects.includes(project);
                 return `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})" ${isChecked? 'checked' : ''}> ${project.name}<br>`;
@@ -379,35 +384,69 @@
             }
         });
 
-        document.getElementById('screenshotButton').addEventListener('click', function () {
-            html2canvas(document.body).then(function (canvas) {
-                let screenshotContainer = document.createElement('div');
-                screenshotContainer.appendChild(canvas);
-                document.body.appendChild(screenshotContainer);
-            });
-        });
+        // 修改后的截图功能
+document.getElementById('screenshotButton').addEventListener('click', function () {
+    // 获取“生成截图”按钮的位置
+    const screenshotButton = document.getElementById('screenshotButton');
+    const buttonTop = screenshotButton.offsetTop; // 按钮的顶部位置
 
-        function clearTables() {
-            projectList = [];
-            participantList = [];
-            updateProjectTable();
-            updateSumTable();
-            updateProjectSum();
-            updateParticipantSum();
-        }
+    // 创建一个临时容器，用于限制截图范围
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.width = document.documentElement.clientWidth + 'px';
+    container.style.height = buttonTop + 'px'; // 限制高度为按钮的顶部位置
+    container.style.overflow = 'hidden';
 
-        function resetGuests() {
-            participantList.forEach(participant => {
-                let checkboxes = document.querySelectorAll(`[id^="projectCheckbox${participantList.indexOf(participant)}"]`);
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-                participant.projects = [];
-                participant.totalAverage = 0;
-            });
-            updateSumTable();
-            updateParticipantSum();
-        }
+    // 克隆 body 内容并添加到容器中
+    const bodyClone = document.body.cloneNode(true);
+    container.appendChild(bodyClone);
+
+    // 将容器临时添加到页面中
+    document.body.appendChild(container);
+
+    // 从 currentDate 字段中提取日期值
+    const currentDateText = document.getElementById('currentDate').textContent;
+    const dateMatch = currentDateText.match(/(\d{4})-(\d{2})-(\d{2})/); // 匹配 YYYY-MM-DD 格式
+    let formattedDate = '';
+
+    if (dateMatch) {
+        // 提取年、月、日并拼接为 YYYYMMDD 格式
+        const year = dateMatch[1];
+        const month = dateMatch[2];
+        const day = dateMatch[3];
+        formattedDate = `${year}${month}${day}`;
+    } else {
+        // 如果无法匹配，使用当前日期作为备用
+        const currentDate = new Date();
+        formattedDate = currentDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '');
+    }
+
+    // 使用 html2canvas 截图
+    html2canvas(container, {
+        scrollY: -window.scrollY, // 确保截图从页面顶部开始
+        windowWidth: document.documentElement.clientWidth,
+        windowHeight: buttonTop, // 限制截图高度
+        useCORS: true, // 允许跨域资源
+    }).then(function (canvas) {
+        // 生成文件名
+        const fileName = `sandeziTM-${formattedDate}.png`;
+
+        // 将 canvas 转换为图片并下载
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = fileName;
+        link.click();
+
+        // 移除临时容器
+        document.body.removeChild(container);
+    }).catch(function (error) {
+        console.error('截图失败:', error);
+        alert('截图失败，请检查控制台日志。');
+    });
+});
+
     </script>
 
 </body>
