@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三德子球会™ 活动明细</title>
+    <style>
+        :root {
+            --main-padding: 30px;
+            --table-width: 400px;
+            --col1-width: 160px;
+            --col2-width: 80px;
+            --col3-width: 80px;
+            --col4-width: 80px;
+            --font-size: 16px;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, "XinGothic W4 GBJ Light", BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            font-weight: regular;
+            line-height: 200%;
+            margin-left: var(--main-padding);
+            margin-right: var(--main-padding);
+            font-size: var(--font-size);
+        }
+
+        table th,
+        table td {
+            text-align: left;
+            font-weight: regular;
+            line-height: 200%;
+            font-size: inherit;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: var(--table-width);
+            max-width: 100%;
+        }
+
+        table tr:not(:last-child) {
+            border-bottom: 1px solid #ddd;
+        }
+
+        /* 添加表头底部粗横线样式 */
+        #projectTable thead tr,
+        #sumTable thead tr {
+            border-bottom: 2px solid black;
+        }
+
+        /* 为表格最后一行底部添加粗横线 */
+        #projectTable tbody tr:last-child,
+        #sumTable tbody tr:last-child {
+            border-bottom: 2px solid black;
+        }
+
+        h3 {
+            margin-top: 3rem;
+            font-size: 1.2rem;
+        }
+        
+        h4 {
+            font-size: 1.1rem;
+        }
+
+        /* 按钮样式 */
+       .add-button {
+            font-size: inherit;
+            line-height: inherit;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: gray;
+        }
+
+        /* 半屏输入面板样式 */
+        .input-panel {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #f8f8f8;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            padding: 5%;
+            box-sizing: border-box;
+            z-index: 1000;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        .input-panel.active {
+            display: block;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 0.625rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #000000;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: #999;
+        }
+
+        .input-panel-title {
+            margin-top: 0;
+            margin-bottom: 0.9375rem;
+            font-size: 1.125rem;
+            color: #333;
+            display: inline-block;
+        }
+
+        .input-panel-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .input-panel-button {
+            padding: 0.625rem 0.9375rem;
+            border: none;
+            border-radius: 5px;
+            background-color: #000000;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .input-panel-button.cancel {
+            background-color: transparent;
+            color: #6c757d;
+            position: absolute;
+            top: 5%;
+            right: 5%;
+            padding: 0.3rem 0.5rem;
+            flex: none;
+        }
+        
+        .input-panel-button.next {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        /* 遮罩层样式 */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+        /* 响应式设计 */
+        @media screen and (max-width: 768px) {
+            :root {
+                --main-padding: 15px;
+                --table-width: 100%;
+                --col1-width: 40%;
+                --col2-width: 20%;
+                --col3-width: 20%;
+                --col4-width: 20%;
+                --font-size: 14px;
+            }
+            
+            body {
+                margin-left: var(--main-padding);
+                margin-right: var(--main-padding);
+            }
+            
+            h3 {
+                margin-top: 2rem;
+            }
+            
+            #formulaInput {
+                width: 100% !important;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            :root {
+                --main-padding: 10px;
+                --font-size: 12px;
+            }
+            
+            .input-panel-buttons {
+                flex-direction: row;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h3 style="margin-bottom: 0;">三德子球会™ 活动明细</h3>
+    <span id="currentDate" style="color: gray; cursor: pointer;"></span>
+
+    <!-- 项目费用表格 -->
+    <h3>项目一览</h3>
+    <table id="projectTable">
+        <thead>
+            <tr>
+                <th style="width: var(--col1-width);">项目</th>
+                <th style="width: var(--col2-width);">金额</th>
+                <th style="width: var(--col3-width);">人数</th>
+                <th style="width: var(--col4-width); text-align: right;">人均</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <!-- 修改后的添加项目按钮 -->
+    <span class="add-button" onclick="showProjectInputPanel()">添加</span>
+
+    <br style="line-height: 150%;">
+
+    <!-- 费用求和表格 -->
+    <h3>嘉宾费用</h3>
+    <table id="sumTable">
+        <thead>
+            <tr>
+                <th style="width: var(--col1-width);">嘉宾</th>
+                <th style="width: calc(var(--col2-width) + var(--col3-width));">参与</th>
+                <th style="width: var(--col4-width); text-align: right;">每人</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <!-- 修改后的添加嘉宾按钮 -->
+    <span class="add-button" onclick="showParticipantInputPanel()">添加</span>
+
+    <br style="line-height: 150%;">
+
+    <!-- 调整截图按钮位置 -->
+    <button id="screenshotButton" style="margin-top: 90px;">保存截图</button>
+
+    <!-- 费用核算器部分 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 60px;">
+        <div>
+            <p style="line-height: 1;">项目金额求和：<span id="projectSumResult">0</span></p>
+            <p style="line-height: 1;">嘉宾费用求和：<span id="participantSumResult">0</span></p>
+        </div>
+    </div>
+    <input type="text" placeholder="输入公式自动计算嘉宾费用" id="formulaInput" style="width: var(--table-width); max-width: 100%; border: 0; border-bottom: 2px solid black;">
+
+    <!-- 半屏输入面板 - 项目 -->
+    <div class="overlay" id="overlay"></div>
+    <div class="input-panel" id="projectInputPanel">
+        <h4 class="input-panel-title">添加项目</h4>
+        <button class="input-panel-button cancel" onclick="hideInputPanel()">取消</button>
+        <input type="text" class="input-field" id="projectNameInput" placeholder="请输入项目名称" autofocus>
+        <input type="text" class="input-field" id="projectAmountInput" placeholder="请输入项目金额（可输入公式，需以'='开头）">
+        <input type="text" class="input-field" id="projectPeopleCountInput" placeholder="请输入项目人数（支持小数，适用于部分参与的嘉宾）">
+        <div class="input-panel-buttons">
+            <button class="input-panel-button next" onclick="clearAndFocusFirstInput('projectInputPanel')">下一项</button>
+            <button class="input-panel-button" onclick="submitProjectForm()">添加</button>
+        </div>
+    </div>
+
+    <!-- 半屏输入面板 - 嘉宾 -->
+    <div class="input-panel" id="participantInputPanel">
+        <h4 class="input-panel-title">添加嘉宾</h4>
+        <button class="input-panel-button cancel" onclick="hideInputPanel()">取消</button>
+        <input type="text" class="input-field" id="participantNameInput" placeholder="请输入嘉宾名称" autofocus>
+        <input type="text" class="input-field" id="participantCoefficientInput" placeholder="请输入参与度系数（若全程参与填 1，参与一半填 0.5）">
+        <div class="input-panel-buttons">
+            <button class="input-panel-button next" onclick="clearAndFocusFirstInput('participantInputPanel')">下一项</button>
+            <button class="input-panel-button" onclick="submitParticipantForm()">添加</button>
+        </div>
+    </div>
+
+    <!-- 半屏输入面板 - 日期 -->
+    <div class="input-panel" id="dateInputPanel">
+        <h4 class="input-panel-title">修改日期</h4>
+        <button class="input-panel-button cancel" onclick="hideInputPanel()">取消</button>
+        <input type="text" class="input-field" id="dateMMDDInput" placeholder="请输入日期（MMDD）" autofocus>
+        <div class="input-panel-buttons">
+            <button class="input-panel-button next" onclick="clearAndFocusFirstInput('dateInputPanel')">下一项</button>
+            <button class="input-panel-button" onclick="submitDateForm()">添加</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        // 存储项目信息
+        let projectList = [];
+        // 存储嘉宾信息
+        let participantList = [];
+
+        // 设置默认日期为打开网页当天的日期
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' + ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][new Date().getDay()];
+
+        // 显示项目输入面板
+        function showProjectInputPanel() {
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('projectInputPanel').classList.add('active');
+            document.getElementById('projectNameInput').focus();
+            setupInputPanelKeyEvents('projectInputPanel');
+        }
+
+        // 显示嘉宾输入面板
+        function showParticipantInputPanel() {
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('participantInputPanel').classList.add('active');
+            document.getElementById('participantNameInput').focus();
+            setupInputPanelKeyEvents('participantInputPanel');
+        }
+
+        // 显示日期输入面板
+        function showDateInputPanel() {
+            document.getElementById('overlay').classList.add('active');
+            document.getElementById('dateInputPanel').classList.add('active');
+            document.getElementById('dateMMDDInput').focus();
+            setupInputPanelKeyEvents('dateInputPanel');
+        }
+
+        // 隐藏所有输入面板
+        function hideInputPanel() {
+            document.getElementById('overlay').classList.remove('active');
+            document.querySelectorAll('.input-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            // 清空所有输入框
+            document.querySelectorAll('.input-field').forEach(input => {
+                input.value = '';
+            });
+        }
+        
+        // 清空当前面板的输入框并聚焦第一个输入框
+        function clearAndFocusFirstInput(panelId) {
+            const panel = document.getElementById(panelId);
+            const inputs = panel.querySelectorAll('.input-field');
+            
+            // 获取当前输入的数据并保存
+            if (panelId === 'projectInputPanel') {
+                const projectName = document.getElementById('projectNameInput').value;
+                const projectAmountInput = document.getElementById('projectAmountInput').value;
+                const projectPeopleCount = document.getElementById('projectPeopleCountInput').value;
+                
+                if (projectName && projectPeopleCount && parseFloat(projectPeopleCount) > 0) {
+                    let projectAmount;
+                    if (projectAmountInput.startsWith("=")) {
+                        try {
+                            projectAmount = eval(projectAmountInput.slice(1));
+                        } catch (error) {
+                            alert("公式错误，请重新输入。");
+                            return;
+                        }
+                    } else {
+                        projectAmount = parseFloat(projectAmountInput);
+                        if (isNaN(projectAmount)) {
+                            alert("输入的金额无效，请重新输入。");
+                            return;
+                        }
+                    }
+                    
+                    // 创建新项目并添加到列表
+                    const newProject = {
+                        name: projectName,
+                        amount: projectAmount,
+                        peopleCount: parseFloat(projectPeopleCount),
+                        average: projectAmount / parseFloat(projectPeopleCount)
+                    };
+                    projectList.push(newProject);
+                    
+                    // 更新表格
+                    updateProjectTable();
+                    updateSumTable();
+                    updateProjectSum();
+                } else {
+                    if (projectName || projectAmountInput || projectPeopleCount) {
+                        alert("请填写完整的项目信息。");
+                        return;
+                    }
+                }
+            } else if (panelId === 'participantInputPanel') {
+                const participantName = document.getElementById('participantNameInput').value;
+                const participantCoefficient = document.getElementById('participantCoefficientInput').value;
+                
+                if (participantName && participantCoefficient && parseFloat(participantCoefficient) > 0) {
+                    // 创建新嘉宾并添加到列表
+                    const newParticipant = {
+                        name: participantName,
+                        coefficient: parseFloat(participantCoefficient),
+                        projects: [],
+                        totalAverage: 0
+                    };
+                    participantList.push(newParticipant);
+                    
+                    // 更新表格
+                    updateParticipantTable();
+                    updateSumTable();
+                    updateParticipantSum();
+                } else {
+                    if (participantName || participantCoefficient) {
+                        alert("请填写完整的嘉宾信息。");
+                        return;
+                    }
+                }
+            } else if (panelId === 'dateInputPanel') {
+                const dateMMDD = document.getElementById('dateMMDDInput').value;
+                
+                if (dateMMDD && dateMMDD.length === 4) {
+                    const month = dateMMDD.substring(0, 2);
+                    const day = dateMMDD.substring(2, 4);
+                    const date = new Date();
+                    date.setMonth(parseInt(month) - 1);
+                    date.setDate(parseInt(day));
+                    
+                    document.getElementById('currentDate').textContent = date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' + ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][date.getDay()];
+                } else {
+                    if (dateMMDD) {
+                        alert("请输入正确的日期格式（MMDD）。");
+                        return;
+                    }
+                }
+            }
+            
+            // 清空输入框并聚焦第一个输入框
+            inputs.forEach(input => {
+                input.value = '';
+            });
+            if (inputs.length > 0) {
+                inputs[0].focus();
+            }
+        }
+
+        // 设置输入面板的键盘事件
+        function setupInputPanelKeyEvents(panelId) {
+            const panel = document.getElementById(panelId);
+            const inputs = panel.querySelectorAll('.input-field');
+            
+            inputs.forEach((input, index) => {
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (index < inputs.length - 1) {
+                            // 如果不是最后一个输入框，焦点移到下一个
+                            inputs[index + 1].focus();
+                        } else {
+                            // 如果是最后一个输入框，提交表单
+                            if (panelId === 'projectInputPanel') {
+                                submitProjectForm();
+                            } else if (panelId === 'participantInputPanel') {
+                                submitParticipantForm();
+                            } else if (panelId === 'dateInputPanel') {
+                                submitDateForm();
+                            }
+                        }
+                    } else if (e.key === 'Escape') {
+                        hideInputPanel();
+                    }
+                });
+            });
+        }
+
+        // 提交项目表单
+        function submitProjectForm() {
+            const projectName = document.getElementById('projectNameInput').value;
+            const projectAmountInput = document.getElementById('projectAmountInput').value;
+            const projectPeopleCount = document.getElementById('projectPeopleCountInput').value;
+
+            if (projectName && projectPeopleCount && parseFloat(projectPeopleCount) > 0) {
+                let projectAmount;
+                if (projectAmountInput.startsWith("=")) {
+                    try {
+                        projectAmount = eval(projectAmountInput.slice(1));
+                    } catch (error) {
+                        alert("公式错误，请重新输入。");
+                        return;
+                    }
+                } else {
+                    projectAmount = parseFloat(projectAmountInput);
+                    if (isNaN(projectAmount)) {
+                        alert("输入的金额无效，请重新输入。");
+                        return;
+                    }
+                }
+                projectList.push({
+                    name: projectName,
+                    amount: projectAmount,
+                    peopleCount: parseFloat(projectPeopleCount),
+                    average: projectAmount / parseFloat(projectPeopleCount)
+                });
+                updateProjectTable();
+                updateProjectSum();
+                hideInputPanel();
+            } else {
+                alert("输入的数据无效，请重新输入。");
+            }
+        }
+
+        // 提交嘉宾表单
+        function submitParticipantForm() {
+            const participantName = document.getElementById('participantNameInput').value;
+            let coefficient = document.getElementById('participantCoefficientInput').value;
+            coefficient = parseFloat(coefficient);
+            if (isNaN(coefficient)) {
+                coefficient = 1;
+            }
+            if (participantName) {
+                participantList.push({
+                    name: participantName,
+                    projects: [],
+                    totalAverage: 0,
+                    coefficient: coefficient
+                });
+                updateSumTable();
+                hideInputPanel();
+            } else {
+                alert("请输入嘉宾名称。");
+            }
+        }
+
+        // 提交日期表单
+        function submitDateForm() {
+            let newDateMMDD = document.getElementById('dateMMDDInput').value;
+            if (newDateMMDD && /^\d{4}$/.test(newDateMMDD)) {
+                let year = new Date().getFullYear();
+                let newDate = year + '-' + newDateMMDD.slice(0, 2) + '-' + newDateMMDD.slice(2);
+                let dateObj = new Date(newDate);
+                let dayOfWeek = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][dateObj.getDay()];
+                document.getElementById('currentDate').textContent = newDate + ' ' + dayOfWeek;
+                hideInputPanel();
+            } else {
+                alert("输入的日期格式不正确，请重新输入。");
+            }
+        }
+
+        function updateProjectTable() {
+            let tableBody = document.getElementById('projectTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+            projectList.forEach(project => {
+                let row = tableBody.insertRow();
+                let nameCell = row.insertCell(0);
+                let amountCell = row.insertCell(1);
+                let peopleCountCell = row.insertCell(2);
+                let averageCell = row.insertCell(3);
+                nameCell.textContent = project.name;
+                amountCell.textContent = project.amount.toFixed(2);
+                peopleCountCell.textContent = project.peopleCount;
+                averageCell.textContent = project.average.toFixed(2);
+                averageCell.style.textAlign = 'right';
+
+                // 为项目名称单元格添加可编辑功能
+                nameCell.addEventListener('click', function () {
+                    showEditProjectPanel(project);
+                });
+
+                // 为金额单元格添加可编辑功能
+                amountCell.addEventListener('click', function () {
+                    showEditProjectAmountPanel(project);
+                });
+
+                // 为人数单元格添加可编辑功能
+                peopleCountCell.addEventListener('click', function () {
+                    showEditProjectPeopleCountPanel(project);
+                });
+
+                // 为项目名称单元格添加 shift+单击删除功能
+                nameCell.addEventListener('click', function (event) {
+                    if (event.shiftKey) {
+                        projectList = projectList.filter(p => p !== project);
+                        updateProjectTable();
+                        updateSumTable();
+                        updateProjectSum();
+                    }
+                });
+            });
+
+            // 在更新项目表后，同步更新嘉宾的费用计算
+            participantList.forEach(participant => {
+                participant.totalAverage = participant.projects.reduce((total, p) => total + p.average, 0);
+            });
+            updateSumTable();
+        }
+
+        function updateSumTable() {
+            let tableBody = document.getElementById('sumTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+            participantList.forEach((participant, participantIndex) => {
+                let row = tableBody.insertRow();
+                let nameCell = row.insertCell(0);
+                let projectsCell = row.insertCell(1);
+                let averageSumCell = row.insertCell(2);
+                nameCell.textContent = participant.name;
+
+                // 构建参与列内容，先添加系数
+                let projectsContent = '';
+                if (participant.coefficient !== 1) {
+                    projectsContent += `<span style="color: gray;">${participant.coefficient * 100}% of</span><br>`;
+                }
+                projectsContent += projectList.map((project, projectIndex) => {
+                    const isChecked = participant.projects.includes(project);
+                    return `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})" ${isChecked? 'checked' : ''}> ${project.name}<br>`;
+                }).join('');
+                projectsCell.innerHTML = projectsContent;
+
+                let result = (participant.totalAverage * participant.coefficient).toFixed(2);
+                averageSumCell.textContent = result;
+                averageSumCell.style.textAlign = 'right';
+
+                // 为嘉宾名称单元格添加可编辑功能
+                nameCell.addEventListener('click', function () {
+                    showEditParticipantPanel(participant);
+                });
+
+                // 为嘉宾名称单元格添加 shift+单击删除功能
+                nameCell.addEventListener('click', function (event) {
+                    if (event.shiftKey) {
+                        participantList = participantList.filter(p => p !== participant);
+                        updateSumTable();
+                        updateParticipantSum();
+                    }
+                });
+            });
+        }
+
+        // 显示编辑项目面板
+        function showEditProjectPanel(project) {
+            // 这里可以实现编辑项目的半屏面板，但为简化代码，暂时使用prompt
+            let newName = prompt("请输入新的项目名称：", project.name);
+            if (newName) {
+                project.name = newName;
+                updateProjectTable();
+                updateSumTable();
+                // 当项目名称修改后，取消所有嘉宾对该项目的勾选并更新总平均金额
+                participantList.forEach(participant => {
+                    let checkbox = document.getElementById(`projectCheckbox${participantList.indexOf(participant)}${projectList.indexOf(project)}`);
+                    if (checkbox) {
+                        checkbox.checked = false;
+                        participant.projects = participant.projects.filter(p => p !== project);
+                        participant.totalAverage = participant.projects.reduce((total, p) => total + p.average, 0);
+                    }
+                });
+                updateSumTable();
+            }
+        }
+
+        // 显示编辑项目金额面板
+        function showEditProjectAmountPanel(project) {
+            // 这里可以实现编辑项目金额的半屏面板，但为简化代码，暂时使用prompt
+            let newAmountInput = prompt("请输入新的项目金额（可输入公式，需以'='开头）：", project.amount);
+            if (newAmountInput) {
+                if (newAmountInput.startsWith("=")) {
+                    try {
+                        project.amount = eval(newAmountInput.slice(1));
+                    } catch (error) {
+                        alert("公式错误，请重新输入。");
+                        return;
+                    }
+                } else {
+                    let newAmount = parseFloat(newAmountInput);
+                    if (isNaN(newAmount)) {
+                        alert("输入的金额无效，请重新输入。");
+                        return;
+                    }
+                    project.amount = newAmount;
+                }
+                project.average = project.amount / project.peopleCount;
+                updateProjectTable();
+                updateSumTable();
+                updateProjectSum();
+            }
+        }
+
+        // 显示编辑项目人数面板
+        function showEditProjectPeopleCountPanel(project) {
+            // 这里可以实现编辑项目人数的半屏面板，但为简化代码，暂时使用prompt
+            let newPeopleCount = prompt("请输入新的项目人数（支持小数，适用于部分参与的嘉宾）：", project.peopleCount);
+            if (newPeopleCount && parseFloat(newPeopleCount) > 0) {
+                project.peopleCount = parseFloat(newPeopleCount);
+                project.average = project.amount / project.peopleCount;
+                updateProjectTable();
+                updateSumTable();
+                updateProjectSum();
+            } else {
+                alert("输入的人数无效，请重新输入。");
+            }
+        }
+
+        // 显示编辑嘉宾面板
+        function showEditParticipantPanel(participant) {
+            // 这里可以实现编辑嘉宾的半屏面板，但为简化代码，暂时使用prompt
+            let newName = prompt("请输入新的嘉宾名称：", participant.name);
+            let newCoefficient = prompt("请输入新的参与度系数（若全程参与填 1，参与一半填 0.5）：", participant.coefficient);
+            newCoefficient = parseFloat(newCoefficient);
+            if (isNaN(newCoefficient)) {
+                newCoefficient = participant.coefficient;
+            }
+            if (newName) {
+                participant.name = newName;
+                participant.coefficient = newCoefficient;
+                updateSumTable();
+                updateParticipantSum();
+            }
+        }
+
+        function updateParticipantAverage(participantIndex, projectIndex) {
+            let participant = participantList[participantIndex];
+            let checkbox = document.getElementById(`projectCheckbox${participantIndex}${projectIndex}`);
+            if (checkbox.checked) {
+                participant.projects.push(projectList[projectIndex]);
+            } else {
+                participant.projects = participant.projects.filter(p => p !== projectList[projectIndex]);
+            }
+            // 更新总平均金额
+            participant.totalAverage = participant.projects.reduce((total, project) => total + project.average, 0);
+
+            let averageSumCell = document.getElementById('sumTable').getElementsByTagName('tbody')[0].rows[participantIndex].cells[2];
+            let result = (participant.totalAverage * participant.coefficient).toFixed(2);
+            averageSumCell.textContent = result;
+            updateParticipantSum();
+
+            // 更新参与列的系数显示
+            let projectsCell = document.getElementById('sumTable').getElementsByTagName('tbody')[0].rows[participantIndex].cells[1];
+            let projectsContent = '';
+            if (participant.coefficient !== 1) {
+                projectsContent += `<span style="color: gray;">${participant.coefficient * 100}% of</span><br>`;
+            }
+            projectsContent += projectList.map((project, projectIndex) => {
+                const isChecked = participant.projects.includes(project);
+                return `<input type="checkbox" id="projectCheckbox${participantIndex}${projectIndex}" onchange="updateParticipantAverage(${participantIndex}, ${projectIndex})" ${isChecked? 'checked' : ''}> ${project.name}<br>`;
+            }).join('');
+            projectsCell.innerHTML = projectsContent;
+        }
+
+        function updateProjectSum() {
+            let total = 0;
+            projectList.forEach(project => {
+                total += project.amount;
+            });
+            document.getElementById('projectSumResult').textContent = total.toFixed(2);
+        }
+
+        function updateParticipantSum() {
+            let formulaInputValue = document.getElementById('formulaInput').value;
+            let total = 0;
+            participantList.forEach(participant => {
+                total += participant.totalAverage * participant.coefficient;
+            });
+            try {
+                let result = eval(formulaInputValue);
+                document.getElementById('participantSumResult').textContent = result.toFixed(2);
+            } catch (error) {
+                document.getElementById('participantSumResult').textContent = '错误的公式';
+            }
+        }
+
+        document.getElementById('formulaInput').addEventListener('input', function () {
+            updateParticipantSum();
+        });
+
+        // 修改日期点击事件
+        document.getElementById('currentDate').addEventListener('click', function () {
+            showDateInputPanel();
+        });
+
+        // 截图功能
+        document.getElementById('screenshotButton').addEventListener('click', function () {
+            // 获取"生成截图"按钮的位置
+            const screenshotButton = document.getElementById('screenshotButton');
+            const buttonTop = screenshotButton.offsetTop; // 按钮的顶部位置
+
+            // 创建一个临时容器，用于限制截图范围
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.top = '0';
+            container.style.left = '0';
+            container.style.width = document.documentElement.clientWidth + 'px';
+            container.style.height = buttonTop + 'px'; // 限制高度为按钮的顶部位置
+            container.style.overflow = 'hidden';
+
+            // 克隆 body 内容并添加到容器中
+            const bodyClone = document.body.cloneNode(true);
+            container.appendChild(bodyClone);
+
+            // 将容器临时添加到页面中
+            document.body.appendChild(container);
+
+            // 从 currentDate 字段中提取日期值
+            const currentDateText = document.getElementById('currentDate').textContent;
+            const dateMatch = currentDateText.match(/(\d{4})-(\d{2})-(\d{2})/); // 匹配 YYYY-MM-DD 格式
+            let formattedDate = '';
+
+            if (dateMatch) {
+                // 提取年、月、日并拼接为 YYYYMMDD 格式
+                const year = dateMatch[1];
+                const month = dateMatch[2];
+                const day = dateMatch[3];
+                formattedDate = `${year}${month}${day}`;
+            } else {
+                // 如果无法匹配，使用当前日期作为备用
+                const currentDate = new Date();
+                formattedDate = currentDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '');
+            }
+
+            // 使用 html2canvas 截图
+            html2canvas(container, {
+                scrollY: -window.scrollY, // 确保截图从页面顶部开始
+                windowWidth: document.documentElement.clientWidth,
+                windowHeight: buttonTop, // 限制截图高度
+                useCORS: true, // 允许跨域资源
+            }).then(function (canvas) {
+                // 生成文件名
+                const fileName = `sandeziTM-${formattedDate}.png`;
+
+                // 将 canvas 转换为图片并下载
+                const link = document.createElement('a');
+                link.href = canvas.toDataURL('image/png');
+                link.download = fileName;
+                link.click();
+
+                // 移除临时容器
+                document.body.removeChild(container);
+            }).catch(function (error) {
+                console.error('截图失败:', error);
+                alert('截图失败，请检查控制台日志。');
+            });
+        });
+    </script>
+</body>
+</html>
